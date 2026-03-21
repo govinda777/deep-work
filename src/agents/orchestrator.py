@@ -76,7 +76,7 @@ class Orchestrator:
 
         validation = self.validator.validate_action(
             action_description=task.description,
-            intended_outcome="Action success without errors",
+            intended_outcome=task.expected_outcome,
             page_content=page_content
         )
 
@@ -86,6 +86,8 @@ class Orchestrator:
             return {"current_task_index": state['current_task_index'] + 1, "retries": 0}
         else:
             print(f"Validation failed. Feedback: {validation.feedback}")
+            # Log failure to memory
+            self.memory.add_memory(f"Task validation failed: {task.description}. Feedback: {validation.feedback}", {"type": "failure", "task": task.description})
             return {"retries": state['retries'] + 1}
 
     def _should_continue(self, state: AgentState):

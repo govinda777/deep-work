@@ -5,6 +5,7 @@ from typing import List
 
 class Task(BaseModel):
     description: str = Field(description="Granular task description")
+    expected_outcome: str = Field(description="The expected outcome of the task for validation")
     tool_type: str = Field(description="The tool required for the task: 'browser' or 'os'")
     parameters: dict = Field(default_factory=dict, description="Parameters for the tool")
 
@@ -20,6 +21,8 @@ class Planner:
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", "You are a task planner for a digital agent named Deep-Work. "
                        "Decompose the user's goal into a sequential list of steps using browser or OS tools. "
+                       "For each task, provide a clear 'description', a specific 'expected_outcome' for validation, "
+                       "the 'tool_type' (browser or os), and any necessary 'parameters'. "
                        "Be precise and output the plan in a structured format."),
             ("human", "{goal}")
         ])

@@ -76,7 +76,7 @@ class Orchestrator:
 
         validation = self.validator.validate_action(
             action_description=task.description,
-            intended_outcome="Action success without errors",
+            intended_outcome=task.expected_outcome,
             page_content=page_content
         )
 
@@ -106,4 +106,8 @@ class Orchestrator:
             "finished": False,
             "retries": 0
         }
-        return await self.graph.ainvoke(initial_state)
+        try:
+            result = await self.graph.ainvoke(initial_state)
+            return result
+        finally:
+            await self.actor.browser_tools.stop_browser()

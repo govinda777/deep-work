@@ -21,8 +21,14 @@ class Actor:
         if tool_type == "browser":
             if "navigate" in description.lower():
                 return await self.browser_tools.navigate(params.get("url"))
+            elif "double click" in description.lower():
+                return await self.browser_tools.double_click_element(params.get("selector"))
             elif "click" in description.lower():
                 return await self.browser_tools.click_element(params.get("selector"))
+            elif "hover" in description.lower():
+                return await self.browser_tools.hover_element(params.get("selector"))
+            elif "scroll" in description.lower():
+                return await self.browser_tools.scroll(params.get("direction", "down"), params.get("amount", 500))
             elif "input" in description.lower() or "type" in description.lower():
                 return await self.browser_tools.input_text(params.get("selector"), params.get("text"))
             elif "screenshot" in description.lower():
@@ -30,7 +36,9 @@ class Actor:
             else:
                 return f"Browser tool: {description}"
         elif tool_type == "os":
-            if "click" in description.lower():
+            if "drag" in description.lower():
+                return self.os_tools.drag_to(params.get("x"), params.get("y"))
+            elif "click" in description.lower():
                 return self.os_tools.click_at(params.get("x"), params.get("y"))
             elif "type" in description.lower():
                 return self.os_tools.type_keys(params.get("text"))

@@ -25,11 +25,19 @@ class Validator:
         ])
         self.chain = self.prompt | self.llm.with_structured_output(ValidationResult)
 
-    def validate_action(self, action_description: str, intended_outcome: str, page_content: str) -> ValidationResult:
+    def validate_action(self, action_description: str, intended_outcome: str, page_content: str, screenshot_path: str = None) -> ValidationResult:
         # Use a summary or truncate the page content for context window efficiency
         summary = page_content[:1000] if page_content else "No content available."
-        return self.chain.invoke({
+
+        prompt_input = {
             "action_description": action_description,
             "intended_outcome": intended_outcome,
             "page_content_summary": summary
-        })
+        }
+
+        # In the future, we can add multi-modal support here for screenshots
+        if screenshot_path:
+            # logic to handle screenshot (e.g., upload to cloud or include in multimodal prompt)
+            pass
+
+        return self.chain.invoke(prompt_input)

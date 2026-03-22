@@ -8,7 +8,7 @@ class TestMemoryManager(unittest.TestCase):
     @patch('src.memory.pinecone_manager.PineconeVectorStore')
     @patch('os.getenv')
     def test_init(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
-        mock_getenv.side_effect = lambda k, default=None: "test-value" if k == "PINECONE_API_KEY" else default
+        mock_getenv.side_effect = lambda k, default=None: "test-value" if k in ["PINECONE_API_KEY", "OPENAI_API_KEY"] else default
 
         # Mocking the list_indexes behavior
         mock_pc_instance = mock_pinecone.return_value
@@ -24,7 +24,7 @@ class TestMemoryManager(unittest.TestCase):
     @patch('src.memory.pinecone_manager.PineconeVectorStore')
     @patch('os.getenv')
     def test_add_memory(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
-        mock_getenv.return_value = "test-value"
+        mock_getenv.side_effect = lambda k, default=None: "test-value" if k in ["PINECONE_API_KEY", "OPENAI_API_KEY"] else default
         mock_pc_instance = mock_pinecone.return_value
         mock_pc_instance.list_indexes.return_value.names.return_value = ["test-index"]
 

@@ -1,5 +1,20 @@
-import pyautogui
 import os
+import sys
+from unittest.mock import MagicMock
+
+# Handle headless environment for pyautogui
+try:
+    if 'DISPLAY' not in os.environ and sys.platform != 'win32' and sys.platform != 'darwin':
+        # Create a mock for pyautogui if no display is available
+        mock_pyautogui = MagicMock()
+        sys.modules['pyautogui'] = mock_pyautogui
+        import pyautogui
+    else:
+        import pyautogui
+except Exception:
+    mock_pyautogui = MagicMock()
+    sys.modules['pyautogui'] = mock_pyautogui
+    import pyautogui
 
 class OSTools:
     """

@@ -28,7 +28,7 @@ class TestBrowserTools(unittest.IsolatedAsyncioTestCase):
         result = await tools.navigate("https://example.com")
 
         self.assertEqual(result, "Navigated to https://example.com")
-        mock_page_instance.goto.assert_called_once_with("https://example.com")
+        mock_page_instance.goto.assert_called_once_with("https://example.com", wait_until="networkidle")
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,14 @@
-import pyautogui
 import os
+import sys
+from unittest.mock import MagicMock
+
+# Mock pyautogui if DISPLAY is not set (headless environment)
+if not os.getenv("DISPLAY"):
+    mock_pyautogui = MagicMock()
+    sys.modules["pyautogui"] = mock_pyautogui
+    import pyautogui
+else:
+    import pyautogui
 
 class OSTools:
     """

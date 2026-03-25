@@ -7,6 +7,7 @@ class Task(BaseModel):
     description: str = Field(description="Granular task description")
     tool_type: str = Field(description="The tool required for the task: 'browser' or 'os'")
     parameters: dict = Field(default_factory=dict, description="Parameters for the tool")
+    expected_outcome: str = Field(description="The expected visual or state outcome after the task")
 
 class Plan(BaseModel):
     tasks: List[Task] = Field(description="Sequential list of tasks to achieve the goal")

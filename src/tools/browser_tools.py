@@ -26,19 +26,21 @@ class BrowserTools:
     async def navigate(self, url: str):
         if not self.page:
             await self.start_browser()
-        await self.page.goto(url)
+        await self.page.goto(url, wait_until="networkidle")
         return f"Navigated to {url}"
 
     async def click_element(self, selector: str):
         if not self.page:
             return "Error: Browser not started"
         await self.page.click(selector)
+        await self.page.wait_for_load_state("networkidle")
         return f"Clicked element {selector}"
 
     async def input_text(self, selector: str, text: str):
         if not self.page:
             return "Error: Browser not started"
         await self.page.fill(selector, text)
+        await self.page.wait_for_load_state("networkidle")
         return f"Entered text into {selector}"
 
     async def take_screenshot(self, path="screenshot.png"):

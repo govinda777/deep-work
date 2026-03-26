@@ -14,7 +14,7 @@ class BrowserTools:
     async def start_browser(self, headless=True):
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(headless=headless)
-        self.context = await self.browser.new_context()
+        self.context = await self.browser.new_context(viewport={'width': 1024, 'height': 768})
         self.page = await self.context.new_page()
 
     async def stop_browser(self):
@@ -48,6 +48,28 @@ class BrowserTools:
             return "Error: Browser not started"
         await self.page.screenshot(path=path)
         return f"Screenshot saved to {path}"
+
+    async def hover(self, selector: str):
+        if not self.page:
+            return "Error: Browser not started"
+        await self.page.hover(selector)
+        return f"Hovered over element {selector}"
+
+    async def double_click(self, selector: str):
+        if not self.page:
+            return "Error: Browser not started"
+        await self.page.dblclick(selector)
+        await self.page.wait_for_load_state("networkidle")
+        return f"Double-clicked element {selector}"
+
+    async def scroll(self, direction: str = "down", amount: int = 500):
+        if not self.page:
+            return "Error: Browser not started"
+        if direction == "down":
+            await self.page.evaluate(f"window.scrollBy(0, {amount})")
+        elif direction == "up":
+            await self.page.evaluate(f"window.scrollBy(0, -{amount})")
+        return f"Scrolled {direction} by {amount} pixels"
 
     async def get_page_content(self):
         if not self.page:

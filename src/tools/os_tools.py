@@ -22,6 +22,10 @@ class OSTools:
         pyautogui.click(x, y)
         return f"Clicked at coordinates ({x}, {y})"
 
+    def double_click_at(self, x: int, y: int):
+        pyautogui.doubleClick(x, y)
+        return f"Double-clicked at coordinates ({x}, {y})"
+
     def type_keys(self, text: str):
         pyautogui.typewrite(text)
         return f"Typed: {text}"

@@ -31,7 +31,10 @@ class TestMemoryManager(unittest.TestCase):
         memory = MemoryManager(index_name="test-index")
         memory.add_memory("test text", {"meta": "data"})
 
-        memory.vectorstore.add_texts.assert_called_once_with(["test text"], metadatas=[{"meta": "data"}])
+        args, kwargs = memory.vectorstore.add_texts.call_args
+        self.assertEqual(args[0], ["test text"])
+        self.assertEqual(kwargs['metadatas'][0]['meta'], 'data')
+        self.assertIn('timestamp', kwargs['metadatas'][0])
 
 if __name__ == '__main__':
     unittest.main()

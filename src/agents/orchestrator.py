@@ -54,7 +54,12 @@ class Orchestrator:
 
     def _plan_node(self, state: AgentState):
         print(f"Planning for goal: {state['goal']}")
-        plan = self.planner.plan(state['goal'])
+
+        # Retrieve context from memory
+        relevant_memories = self.memory.search_memory(state['goal'], k=3)
+        context = "\n".join([m.page_content for m in relevant_memories])
+
+        plan = self.planner.plan(state['goal'], context=context)
         # Store plan in memory
         self.memory.add_memory(f"Created plan for goal: {state['goal']}", {"type": "plan", "goal": state['goal']})
         return {"plan": plan.tasks, "current_task_index": 0, "results": [], "retries": 0}

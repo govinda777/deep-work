@@ -27,7 +27,7 @@ class Validator:
 
     def validate_action(self, action_description: str, intended_outcome: str, page_content: str) -> ValidationResult:
         # Use a summary or truncate the page content for context window efficiency
-        summary = page_content[:1000] if page_content else "No content available."
+        summary = page_content[:2000] if page_content else "No content available."
         return self.chain.invoke({
             "action_description": action_description,
             "intended_outcome": intended_outcome,

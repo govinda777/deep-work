@@ -41,7 +41,11 @@ class MemoryManager:
         """
         Adds a new memory (episodic) to the vector store.
         """
-        self.vectorstore.add_texts([text], metadatas=[metadata] if metadata else None)
+        import datetime
+        metadata = metadata or {}
+        if "timestamp" not in metadata:
+            metadata["timestamp"] = datetime.datetime.now().isoformat()
+        self.vectorstore.add_texts([text], metadatas=[metadata])
 
     def search_memory(self, query, k=5):
         """

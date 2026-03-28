@@ -49,6 +49,13 @@ class BrowserTools:
         await self.page.screenshot(path=path)
         return f"Screenshot saved to {path}"
 
+    async def get_screenshot_base64(self):
+        if not self.page:
+            return None
+        import base64
+        screenshot_bytes = await self.page.screenshot()
+        return base64.b64encode(screenshot_bytes).decode('utf-8')
+
     async def hover(self, selector: str):
         if not self.page:
             return "Error: Browser not started"
@@ -75,3 +82,44 @@ class BrowserTools:
         if not self.page:
             return "Error: Browser not started"
         return await self.page.content()
+
+    async def get_page_summary(self):
+        """
+        Extracts a clean, text-based representation of the page,
+        filtering for interactive and meaningful elements.
+        """
+        if not self.page:
+            return "Error: Browser not started"
+
+        # Simple extraction script to get text and interactive elements
+        summary_script = """
+        () => {
+            const items = [];
+            const walk = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent.trim();
+                    if (text) items.push(text);
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const style = window.getComputedStyle(node);
+                    if (style.display === 'none' || style.visibility === 'hidden') return;
+
+                    const tagName = node.tagName.toLowerCase();
+                    const isInteractive = ['a', 'button', 'input', 'select', 'textarea'].includes(tagName) ||
+                                          node.hasAttribute('onclick') ||
+                                          node.getAttribute('role') === 'button';
+
+                    if (isInteractive) {
+                        const label = node.innerText || node.value || node.placeholder || node.getAttribute('aria-label') || '';
+                        items.push(`[${tagName.toUpperCase()}: ${label.trim()}]`);
+                    }
+
+                    for (let child of node.childNodes) {
+                        walk(child);
+                    }
+                }
+            };
+            walk(document.body);
+            return items.join('\\n');
+        }
+        """
+        return await self.page.evaluate(summary_script)

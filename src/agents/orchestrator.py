@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, END
 from src.agents.planner import Planner, Plan, Task
 from src.agents.actor import Actor
 from src.agents.validator import Validator
+from src.agents.recorder import WorkflowSynthesizer
 from src.memory.pinecone_manager import MemoryManager
 import asyncio
 
@@ -23,6 +24,7 @@ class Orchestrator:
         self.planner = Planner()
         self.actor = Actor()
         self.validator = Validator()
+        self.synthesizer = WorkflowSynthesizer(memory)
         self.memory = memory
         self.graph = self._build_graph()
 
@@ -44,7 +46,8 @@ class Orchestrator:
             {
                 "continue": "execute",
                 "end": END,
-                "retry": "execute"
+                "retry": "execute",
+                "replan": "plan"
             }
         )
 
@@ -59,10 +62,24 @@ class Orchestrator:
         relevant_memories = self.memory.search_memory(state['goal'], k=3)
         context = "\n".join([m.page_content for m in relevant_memories])
 
+        # Add feedback from previous failed attempts if replanning
+        if state.get('plan'):
+            # Only if we have executed at least one task or have some failure context
+            last_task_desc = state['plan'][state['current_task_index']].description if state.get('current_task_index', 0) < len(state['plan']) else "Unknown"
+            last_result = state['results'][-1] if state.get('results') else "No result"
+            context += f"\n\nPrevious attempt failed at task: {last_task_desc}. Result: {last_result}. Re-planning based on this failure."
+
         plan = self.planner.plan(state['goal'], context=context)
         # Store plan in memory
         self.memory.add_memory(f"Created plan for goal: {state['goal']}", {"type": "plan", "goal": state['goal']})
-        return {"plan": plan.tasks, "current_task_index": 0, "results": [], "retries": 0}
+
+        # When replanning, we might want to keep the results of successfully completed tasks
+        return {
+            "plan": plan.tasks,
+            "current_task_index": 0,
+            "results": state.get('results', []),
+            "retries": state.get('retries', 0)
+        }
 
     async def _execute_node(self, state: AgentState):
         task = state['plan'][state['current_task_index']]
@@ -76,13 +93,21 @@ class Orchestrator:
         task = state['plan'][state['current_task_index']]
         last_result = state['results'][-1]
 
-        # In a real scenario, we'd get the actual page content from the actor's browser tools
-        page_content = await self.actor.browser_tools.get_page_content() if task.tool_type == 'browser' else "OS State not readable directly"
+        # Get the actual page content and screenshot from the actor's browser tools
+        page_content = ""
+        screenshot_base64 = None
+        if task.tool_type == 'browser':
+            # Use get_page_summary instead of full content for efficiency
+            page_content = await self.actor.browser_tools.get_page_summary()
+            screenshot_base64 = await self.actor.browser_tools.get_screenshot_base64()
+        else:
+             page_content = "OS State not readable directly"
 
         validation = self.validator.validate_action(
             action_description=task.description,
             intended_outcome=task.expected_outcome,
-            page_content=page_content
+            page_content=page_content,
+            screenshot_base64=screenshot_base64
         )
 
         print(f"Validation for task {state['current_task_index'] + 1}: {'Success' if validation.is_successful else 'Failure'}")
@@ -95,10 +120,17 @@ class Orchestrator:
 
     def _should_continue(self, state: AgentState):
         if state['current_task_index'] >= len(state['plan']):
+            # Goal achieved! Synthesize workflow into memory.
+            print("Goal achieved. Saving workflow to memory...")
+            self.synthesizer.save_workflow(state['goal'], state['plan'])
             return "end"
-        if state['retries'] > 3:
-            print("Max retries reached. Stopping.")
-            return "end"
+        if state['retries'] >= 3:
+            # If we failed multiple times, try replanning instead of giving up immediately
+            print(f"Task failed {state['retries']} times. Requesting re-plan...")
+            if state['retries'] > 5: # Absolute max retries including replans
+                print("Max total retries reached. Stopping.")
+                return "end"
+            return "replan"
         return "continue"
 
     async def run(self, goal: str):

@@ -47,11 +47,27 @@ class MemoryManager:
             metadata["timestamp"] = datetime.datetime.now().isoformat()
         self.vectorstore.add_texts([text], metadatas=[metadata])
 
+    async def aadd_memory(self, text, metadata=None):
+        """
+        Adds a new memory (episodic) to the vector store asynchronously.
+        """
+        import datetime
+        metadata = metadata or {}
+        if "timestamp" not in metadata:
+            metadata["timestamp"] = datetime.datetime.now().isoformat()
+        await self.vectorstore.aadd_texts([text], metadatas=[metadata])
+
     def search_memory(self, query, k=5):
         """
         Retrieves relevant memories (semantic) based on the query.
         """
         return self.vectorstore.similarity_search(query, k=k)
+
+    async def asearch_memory(self, query, k=5):
+        """
+        Retrieves relevant memories (semantic) based on the query asynchronously.
+        """
+        return await self.vectorstore.asimilarity_search(query, k=k)
 
     def delete_index(self):
         """

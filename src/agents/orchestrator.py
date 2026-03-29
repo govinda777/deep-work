@@ -6,6 +6,7 @@ from src.agents.validator import Validator
 from src.agents.recorder import WorkflowSynthesizer
 from src.memory.pinecone_manager import MemoryManager
 import asyncio
+import json
 
 class AgentState(TypedDict):
     goal: str
@@ -55,12 +56,20 @@ class Orchestrator:
 
         return workflow.compile()
 
-    def _plan_node(self, state: AgentState):
+    async def _plan_node(self, state: AgentState):
         print(f"Planning for goal: {state['goal']}")
 
+        # Check for past successful workflows
+        workflow = self.synthesizer.get_workflow(state['goal'])
+        workflow_context = ""
+        if workflow:
+            workflow_context = f"\nFound a relevant past successful workflow:\n{json.dumps(workflow, indent=2)}"
+            print("Found relevant past workflow. Using it as context.")
+
         # Retrieve context from memory
-        relevant_memories = self.memory.search_memory(state['goal'], k=3)
+        relevant_memories = await self.memory.asearch_memory(state['goal'], k=3)
         context = "\n".join([m.page_content for m in relevant_memories])
+        context += workflow_context
 
         # Add feedback from previous failed attempts if replanning
         if state.get('plan'):
@@ -71,7 +80,7 @@ class Orchestrator:
 
         plan = self.planner.plan(state['goal'], context=context)
         # Store plan in memory
-        self.memory.add_memory(f"Created plan for goal: {state['goal']}", {"type": "plan", "goal": state['goal']})
+        await self.memory.aadd_memory(f"Created plan for goal: {state['goal']}", {"type": "plan", "goal": state['goal']})
 
         # When replanning, we might want to keep the results of successfully completed tasks
         return {
@@ -86,7 +95,7 @@ class Orchestrator:
         print(f"Executing task {state['current_task_index'] + 1}/{len(state['plan'])}: {task.description}")
         result = await self.actor.execute_task(task)
         # Store execution result in memory
-        self.memory.add_memory(f"Executed task: {task.description}. Result: {result}", {"type": "execution", "task": task.description})
+        await self.memory.aadd_memory(f"Executed task: {task.description}. Result: {result}", {"type": "execution", "task": task.description})
         return {"results": state['results'] + [result]}
 
     async def _validate_node(self, state: AgentState):

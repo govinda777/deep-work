@@ -1,23 +1,41 @@
 import asyncio
+import os
+import json
 from playwright.async_api import async_playwright
 
 class BrowserTools:
     """
     Browser automation tools using Playwright.
     """
-    def __init__(self):
+    def __init__(self, session_file="session_state.json"):
         self.playwright = None
         self.browser = None
         self.context = None
         self.page = None
+        self.session_file = session_file
 
     async def start_browser(self, headless=True):
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(headless=headless)
-        self.context = await self.browser.new_context(viewport={'width': 1024, 'height': 768})
+
+        # Load session state if it exists
+        storage_state = None
+        if os.path.exists(self.session_file):
+            print(f"Loading session state from {self.session_file}")
+            storage_state = self.session_file
+
+        self.context = await self.browser.new_context(
+            viewport={'width': 1024, 'height': 768},
+            storage_state=storage_state
+        )
         self.page = await self.context.new_page()
 
     async def stop_browser(self):
+        # Save session state before closing
+        if self.context:
+            print(f"Saving session state to {self.session_file}")
+            await self.context.storage_state(path=self.session_file)
+
         if self.browser:
             await self.browser.close()
         if self.playwright:

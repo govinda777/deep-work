@@ -1,4 +1,5 @@
 import os
+import datetime
 from pinecone import Pinecone, ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
@@ -21,7 +22,9 @@ class MemoryManager:
         self.embeddings = OpenAIEmbeddings()
 
         # Ensure the index exists
-        if self.index_name not in self.pc.list_indexes().names():
+        existing_indexes = [index.name for index in self.pc.list_indexes()]
+        if self.index_name not in existing_indexes:
+            print(f"Creating Pinecone index: {self.index_name}")
             self.pc.create_index(
                 name=self.index_name,
                 dimension=1536, # OpenAI embeddings dimension
@@ -41,7 +44,6 @@ class MemoryManager:
         """
         Adds a new memory (episodic) to the vector store.
         """
-        import datetime
         metadata = metadata or {}
         if "timestamp" not in metadata:
             metadata["timestamp"] = datetime.datetime.now().isoformat()
@@ -51,7 +53,6 @@ class MemoryManager:
         """
         Adds a new memory (episodic) to the vector store asynchronously.
         """
-        import datetime
         metadata = metadata or {}
         if "timestamp" not in metadata:
             metadata["timestamp"] = datetime.datetime.now().isoformat()
@@ -73,5 +74,6 @@ class MemoryManager:
         """
         Deletes the current index. Use with caution.
         """
-        if self.index_name in self.pc.list_indexes().names():
+        existing_indexes = [index.name for index in self.pc.list_indexes()]
+        if self.index_name in existing_indexes:
             self.pc.delete_index(self.index_name)

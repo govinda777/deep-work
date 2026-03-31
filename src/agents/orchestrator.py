@@ -36,6 +36,7 @@ class Orchestrator:
         workflow.add_node("plan", self._plan_node)
         workflow.add_node("execute", self._execute_node)
         workflow.add_node("validate", self._validate_node)
+        workflow.add_node("finalize", self._finalize_node)
 
         # Edges
         workflow.set_entry_point("plan")
@@ -46,27 +47,28 @@ class Orchestrator:
             self._should_continue,
             {
                 "continue": "execute",
-                "end": END,
+                "finalize": "finalize",
                 "retry": "execute",
                 "replan": "plan"
             }
         )
 
         workflow.add_edge("execute", "validate")
+        workflow.add_edge("finalize", END)
 
         return workflow.compile()
 
     async def _plan_node(self, state: AgentState):
         print(f"Planning for goal: {state['goal']}")
 
-        # Check for past successful workflows
-        workflow = self.synthesizer.get_workflow(state['goal'])
+        # Check for past successful workflows (Async)
+        workflow = await self.synthesizer.aget_workflow(state['goal'])
         workflow_context = ""
         if workflow:
             workflow_context = f"\nFound a relevant past successful workflow:\n{json.dumps(workflow, indent=2)}"
             print("Found relevant past workflow. Using it as context.")
 
-        # Retrieve context from memory
+        # Retrieve context from memory (Async)
         relevant_memories = await self.memory.asearch_memory(state['goal'], k=3)
         context = "\n".join([m.page_content for m in relevant_memories])
         context += workflow_context
@@ -79,7 +81,7 @@ class Orchestrator:
             context += f"\n\nPrevious attempt failed at task: {last_task_desc}. Result: {last_result}. Re-planning based on this failure."
 
         plan = self.planner.plan(state['goal'], context=context)
-        # Store plan in memory
+        # Store plan in memory (Async)
         await self.memory.aadd_memory(f"Created plan for goal: {state['goal']}", {"type": "plan", "goal": state['goal']})
 
         # When replanning, we might want to keep the results of successfully completed tasks
@@ -94,7 +96,7 @@ class Orchestrator:
         task = state['plan'][state['current_task_index']]
         print(f"Executing task {state['current_task_index'] + 1}/{len(state['plan'])}: {task.description}")
         result = await self.actor.execute_task(task)
-        # Store execution result in memory
+        # Store execution result in memory (Async)
         await self.memory.aadd_memory(f"Executed task: {task.description}. Result: {result}", {"type": "execution", "task": task.description})
         return {"results": state['results'] + [result]}
 
@@ -127,18 +129,23 @@ class Orchestrator:
             print(f"Validation failed. Feedback: {validation.feedback}")
             return {"retries": state['retries'] + 1}
 
+    async def _finalize_node(self, state: AgentState):
+        """
+        Finalizes the goal execution by saving the workflow and performing cleanup.
+        """
+        print("Goal achieved. Saving workflow to memory...")
+        await self.synthesizer.asave_workflow(state['goal'], state['plan'])
+        return {"finished": True}
+
     def _should_continue(self, state: AgentState):
         if state['current_task_index'] >= len(state['plan']):
-            # Goal achieved! Synthesize workflow into memory.
-            print("Goal achieved. Saving workflow to memory...")
-            self.synthesizer.save_workflow(state['goal'], state['plan'])
-            return "end"
+            return "finalize"
         if state['retries'] >= 3:
             # If we failed multiple times, try replanning instead of giving up immediately
             print(f"Task failed {state['retries']} times. Requesting re-plan...")
             if state['retries'] > 5: # Absolute max retries including replans
                 print("Max total retries reached. Stopping.")
-                return "end"
+                return "finalize" # Finalize anyway to record progress
             return "replan"
         return "continue"
 

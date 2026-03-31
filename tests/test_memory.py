@@ -11,7 +11,9 @@ class TestMemoryManager(unittest.IsolatedAsyncioTestCase):
     def test_init(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
         mock_getenv.side_effect = lambda k, default=None: "test-value" if k == "PINECONE_API_KEY" else default
         mock_pc_instance = mock_pinecone.return_value
-        mock_pc_instance.list_indexes.return_value.names.return_value = ["deep-work-memory"]
+        mock_index = MagicMock()
+        mock_index.name = "deep-work-memory"
+        mock_pc_instance.list_indexes.return_value = [mock_index]
         memory = MemoryManager(index_name="deep-work-memory")
         self.assertEqual(memory.index_name, "deep-work-memory")
         mock_pinecone.assert_called_once_with(api_key="test-value")
@@ -23,7 +25,9 @@ class TestMemoryManager(unittest.IsolatedAsyncioTestCase):
     async def test_aadd_memory(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
         mock_getenv.return_value = "test-value"
         mock_pc_instance = mock_pinecone.return_value
-        mock_pc_instance.list_indexes.return_value.names.return_value = ["test-index"]
+        mock_index = MagicMock()
+        mock_index.name = "test-index"
+        mock_pc_instance.list_indexes.return_value = [mock_index]
 
         mock_vs_instance = mock_vectorstore.return_value
         mock_vs_instance.aadd_texts = AsyncMock()
@@ -44,7 +48,9 @@ class TestMemoryManager(unittest.IsolatedAsyncioTestCase):
     async def test_asearch_memory(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
         mock_getenv.return_value = "test-value"
         mock_pc_instance = mock_pinecone.return_value
-        mock_pc_instance.list_indexes.return_value.names.return_value = ["test-index"]
+        mock_index = MagicMock()
+        mock_index.name = "test-index"
+        mock_pc_instance.list_indexes.return_value = [mock_index]
 
         mock_vs_instance = mock_vectorstore.return_value
         mock_vs_instance.asimilarity_search = AsyncMock(return_value=["res"])
@@ -63,7 +69,9 @@ class TestMemoryManager(unittest.IsolatedAsyncioTestCase):
     def test_delete_index(self, mock_getenv, mock_vectorstore, mock_embeddings, mock_pinecone):
         mock_getenv.return_value = "test-value"
         mock_pc_instance = mock_pinecone.return_value
-        mock_pc_instance.list_indexes.return_value.names.return_value = ["test-index"]
+        mock_index = MagicMock()
+        mock_index.name = "test-index"
+        mock_pc_instance.list_indexes.return_value = [mock_index]
 
         memory = MemoryManager(index_name="test-index")
         memory.delete_index()

@@ -40,7 +40,8 @@ class TestOrchestrator(unittest.IsolatedAsyncioTestCase):
         mock_validator_instance.validate_action.return_value = mock_validation
 
         mock_synthesizer_instance = mock_synthesizer.return_value
-        mock_synthesizer_instance.get_workflow.return_value = None
+        mock_synthesizer_instance.aget_workflow = AsyncMock(return_value=None)
+        mock_synthesizer_instance.asave_workflow = AsyncMock()
 
         orchestrator = Orchestrator(mock_memory_instance)
         # Manually inject mocks
@@ -54,7 +55,7 @@ class TestOrchestrator(unittest.IsolatedAsyncioTestCase):
         mock_planner_instance.plan.assert_called_once()
         mock_actor_instance.execute_task.assert_awaited_once_with(mock_task)
         mock_validator_instance.validate_action.assert_called_once()
-        mock_synthesizer_instance.save_workflow.assert_called_once()
+        mock_synthesizer_instance.asave_workflow.assert_awaited_once()
 
 if __name__ == '__main__':
     unittest.main()

@@ -60,7 +60,7 @@ class TestMemoryManager(unittest.IsolatedAsyncioTestCase):
 
         results = await memory.asearch_memory("query", k=3)
         self.assertEqual(results, ["res"])
-        mock_vs_instance.asimilarity_search.assert_awaited_once_with("query", k=3)
+        mock_vs_instance.asimilarity_search.assert_awaited_once_with("query", k=3, filter=None)
 
     @patch('src.memory.pinecone_manager.Pinecone')
     @patch('src.memory.pinecone_manager.OpenAIEmbeddings')

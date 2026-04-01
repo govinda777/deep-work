@@ -18,21 +18,24 @@ class Actor:
         action = task.action
         params = task.parameters
 
-        if tool_type == "browser":
-            method = getattr(self.browser_tools, action, None)
-            if method:
-                return await method(**params)
-            else:
-                return f"Unknown browser action: {action}"
-        elif tool_type == "os":
-            method = getattr(self.os_tools, action, None)
-            if method:
-                import inspect
-                if inspect.iscoroutinefunction(method):
+        try:
+            if tool_type == "browser":
+                method = getattr(self.browser_tools, action, None)
+                if method:
                     return await method(**params)
                 else:
-                    return method(**params)
+                    return f"Unknown browser action: {action}"
+            elif tool_type == "os":
+                method = getattr(self.os_tools, action, None)
+                if method:
+                    import inspect
+                    if inspect.iscoroutinefunction(method):
+                        return await method(**params)
+                    else:
+                        return method(**params)
+                else:
+                    return f"Unknown OS action: {action}"
             else:
-                return f"Unknown OS action: {action}"
-        else:
-            return f"Unknown tool type: {tool_type}"
+                return f"Unknown tool type: {tool_type}"
+        except Exception as e:
+            return f"Error executing {tool_type} action '{action}': {str(e)}"

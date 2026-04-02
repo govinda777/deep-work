@@ -73,6 +73,11 @@ class Orchestrator:
         context = "\n".join([m.page_content for m in relevant_memories])
         context += workflow_context
 
+        # Get current browser state if active
+        if self.actor.browser_tools.page:
+            browser_state = await self.actor.browser_tools.get_page_summary()
+            context += f"\n\nCurrent Browser State (Page Summary):\n{browser_state}"
+
         # Add feedback from previous failed attempts if replanning
         if state.get('plan'):
             # Only if we have executed at least one task or have some failure context

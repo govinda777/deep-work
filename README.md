@@ -50,4 +50,29 @@ PYTHONPATH=. python3 -m unittest discover tests
 ```
 
 ---
+
+## 🇧🇷 Português
+
+**Deep-Work** é um agente digital autônomo projetado para automação web e de sistema operacional.
+
+### 🚀 Início Rápido
+
+1. **Pré-requisitos**: Python 3.12+, Docker e chaves de API (OpenAI, Pinecone).
+2. **Configuração**: Crie um arquivo `.env` com suas chaves.
+3. **Execução (Docker)**: `docker-compose up --build`
+4. **Modo Interativo**:
+   ```bash
+   pip install -r requirements.txt
+   playwright install chromium
+   python main.py
+   ```
+
+### 🛠 Funcionalidades
+- **Memória Pinecone**: Recuperação de experiências passadas (RAG).
+- **Orquestração Robusta**: Ciclo Planner-Actor-Validator.
+- **Automação Híbrida**: Suporte para Navegador e OS.
+
+Para mais detalhes, veja a **[Documentação Técnica em Português](DOCUMENTATION_PT.md)**.
+
+---
 *Deep-Work: Empowering AI to bridge the gap between thought and digital action.*

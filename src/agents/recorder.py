@@ -48,18 +48,16 @@ class WorkflowSynthesizer:
         """
         Retrieves a similar past workflow from memory.
         """
-        results = self.memory.search_memory(goal_query, k=1)
-        for res in results:
-            if res.metadata.get("type") == "workflow":
-                return json.loads(res.metadata.get("tasks_json"))
+        results = self.memory.search_memory(goal_query, k=1, filter={"type": "workflow"})
+        if results:
+            return json.loads(results[0].metadata.get("tasks_json"))
         return None
 
     async def aget_workflow(self, goal_query: str):
         """
         Retrieves a similar past workflow from memory asynchronously.
         """
-        results = await self.memory.asearch_memory(goal_query, k=1)
-        for res in results:
-            if res.metadata.get("type") == "workflow":
-                return json.loads(res.metadata.get("tasks_json"))
+        results = await self.memory.asearch_memory(goal_query, k=1, filter={"type": "workflow"})
+        if results:
+            return json.loads(results[0].metadata.get("tasks_json"))
         return None

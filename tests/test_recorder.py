@@ -51,7 +51,7 @@ class TestWorkflowSynthesizer(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(workflow), 1)
         self.assertEqual(workflow[0]['description'], "Task 1")
-        self.mock_memory.asearch_memory.assert_awaited_once_with("Test Goal", k=1)
+        self.mock_memory.asearch_memory.assert_awaited_once_with("Test Goal", k=1, filter={"type": "workflow"})
 
     async def test_aget_workflow_not_found(self):
         self.mock_memory.asearch_memory.return_value = []

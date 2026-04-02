@@ -58,17 +58,17 @@ class MemoryManager:
             metadata["timestamp"] = datetime.datetime.now().isoformat()
         await self.vectorstore.aadd_texts([text], metadatas=[metadata])
 
-    def search_memory(self, query, k=5):
+    def search_memory(self, query, k=5, filter=None):
         """
         Retrieves relevant memories (semantic) based on the query.
         """
-        return self.vectorstore.similarity_search(query, k=k)
+        return self.vectorstore.similarity_search(query, k=k, filter=filter)
 
-    async def asearch_memory(self, query, k=5):
+    async def asearch_memory(self, query, k=5, filter=None):
         """
         Retrieves relevant memories (semantic) based on the query asynchronously.
         """
-        return await self.vectorstore.asimilarity_search(query, k=k)
+        return await self.vectorstore.asimilarity_search(query, k=k, filter=filter)
 
     def delete_index(self):
         """

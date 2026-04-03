@@ -59,7 +59,7 @@ class Orchestrator:
         return workflow.compile()
 
     async def _plan_node(self, state: AgentState):
-        print(f"Planning for goal: {state['goal']}")
+        print(f"\n[NODE: PLAN] Planning for goal: {state['goal']}")
 
         # Check for past successful workflows (Async)
         workflow = await self.synthesizer.aget_workflow(state['goal'])
@@ -99,13 +99,14 @@ class Orchestrator:
 
     async def _execute_node(self, state: AgentState):
         task = state['plan'][state['current_task_index']]
-        print(f"Executing task {state['current_task_index'] + 1}/{len(state['plan'])}: {task.description}")
+        print(f"\n[NODE: EXECUTE] Task {state['current_task_index'] + 1}/{len(state['plan'])}: {task.description}")
         result = await self.actor.execute_task(task)
         # Store execution result in memory (Async)
         await self.memory.aadd_memory(f"Executed task: {task.description}. Result: {result}", {"type": "execution", "task": task.description})
         return {"results": state['results'] + [result]}
 
     async def _validate_node(self, state: AgentState):
+        print(f"\n[NODE: VALIDATE] Validating task {state['current_task_index'] + 1}...")
         task = state['plan'][state['current_task_index']]
         last_result = state['results'][-1]
 
